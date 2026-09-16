@@ -8,6 +8,10 @@ const FACTS = [
     value: 'Systems, language tooling, data structures',
   },
   {
+    label: 'Interests',
+    value: 'Metaphysics, Photography, Woodworking, Music',
+  },
+  {
     label: 'GitHub',
     value: 'github.com/BrandonGuergo',
   },
@@ -31,20 +35,15 @@ export default function About() {
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
         <div className="lg:col-span-7">
           <p className="font-serif text-2xl leading-snug text-bark md:text-[1.75rem]">
-            Software engineer focused on building systems from first principles.
+            First principles are never secondary
           </p>
 
           <p className="mt-6 text-base leading-8 text-soil">
-            I’m Brandon Guergo, a developer based in Florida. My work centers on
-            understanding and implementing core systems—language interpreters,
-            self-balancing data structures, and related tooling. I care about
-            correctness, clear design, and the mechanics that sit underneath
-            higher-level abstractions.
+            I’m Brandon Guergo, a developer based in Florida. My work tends to live around the fundamentals: interpreters, data structures, language tooling, and the deeper mechanics underneath larger systems. I like solving problems that reward patience, clarity, and good design. Intentionality is crucial.
           </p>
 
           <p className="mt-4 text-base leading-8 text-soil">
-            Outside of software I also shoot photography, which informs how I
-            think about composition and attention to detail in the work I ship.
+            Outside of software, I’m drawn to the same kinds of questions in other forms: metaphysics, philosophy, fiction, and the way ideas take shape in the real world. I enjoy photography, baking, woodworking, and music (guitar, synthesizers, production). They all pull me toward craftsmanship, curiosity, and attention to detail.
           </p>
         </div>
 

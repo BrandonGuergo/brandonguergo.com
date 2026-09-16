@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+
 import LeafFall from './LeafFall'
 import SectionHeading from './SectionHeading'
 
@@ -55,40 +58,103 @@ function Frame({
   photo,
   variant,
   className,
+  onOpen,
 }: {
   photo: Photo
   variant: keyof typeof SIZES
   className: string
+  onOpen: (photo: Photo) => void
 }) {
   const sizes = SIZES[variant]
   return (
-    <figure className={`group relative overflow-hidden rounded-lg bg-cream shadow-lg ${className}`}>
-      <picture>
-        <source type="image/avif" srcSet={srcSet(photo.base, 'avif')} sizes={sizes} />
-        <source type="image/webp" srcSet={srcSet(photo.base, 'webp')} sizes={sizes} />
-        <img
-          src={`/images/${photo.base}-800.webp`}
-          srcSet={srcSet(photo.base, 'webp')}
-          sizes={sizes}
-          alt={photo.alt}
-          width={photo.width}
-          height={photo.height}
-          loading="lazy"
-          decoding="async"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06] motion-reduce:group-hover:scale-100"
-        />
-      </picture>
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[rgba(11,26,17,0.75)] via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-      <figcaption className="pointer-events-none absolute bottom-0 left-0 flex w-full items-center gap-3 p-5 text-[0.65rem] tracking-[0.28em] text-parchment uppercase opacity-0 transition-all duration-500 group-hover:opacity-100 md:translate-y-2 md:group-hover:translate-y-0 motion-reduce:translate-y-0">
-        <span className="block h-px w-6 bg-sage-light" />
-        {photo.caption}
-      </figcaption>
-    </figure>
+    <button
+      type="button"
+      onClick={() => onOpen(photo)}
+      className={`group relative block overflow-hidden rounded-lg bg-cream text-left shadow-lg ${className}`}
+      aria-label={`Open ${photo.caption} photo`}
+    >
+      <figure className="h-full w-full">
+        <picture>
+          <source type="image/avif" srcSet={srcSet(photo.base, 'avif')} sizes={sizes} />
+          <source type="image/webp" srcSet={srcSet(photo.base, 'webp')} sizes={sizes} />
+          <img
+            src={`/images/${photo.base}-800.webp`}
+            srcSet={srcSet(photo.base, 'webp')}
+            sizes={sizes}
+            alt={photo.alt}
+            width={photo.width}
+            height={photo.height}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06] motion-reduce:group-hover:scale-100"
+          />
+        </picture>
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[rgba(11,26,17,0.75)] via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+        <figcaption className="pointer-events-none absolute bottom-0 left-0 flex w-full items-center gap-3 p-5 text-[0.65rem] tracking-[0.28em] text-parchment uppercase opacity-0 transition-all duration-500 group-hover:opacity-100 md:translate-y-2 md:group-hover:translate-y-0 motion-reduce:translate-y-0">
+          <span className="block h-px w-6 bg-sage-light" />
+          {photo.caption}
+        </figcaption>
+      </figure>
+    </button>
   )
 }
 
 export default function Gallery() {
   const [feature, ...rest] = PHOTOS
+  const [selected, setSelected] = useState<Photo | null>(null)
+  const [viewport, setViewport] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setViewport({ width: window.innerWidth, height: window.innerHeight })
+    }
+
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return () => window.removeEventListener('resize', updateViewport)
+  }, [])
+
+  useEffect(() => {
+    if (!selected) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelected(null)
+    }
+
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [selected])
+
+  const modalRatio = selected ? selected.width / selected.height : 1
+  const maxWidth = viewport.width > 0 ? viewport.width * 0.8 : 1200
+  const maxHeight = viewport.height > 0 ? viewport.height * 0.72 : 800
+  const modalWidth =
+    selected && modalRatio
+      ? Math.min(maxWidth, Math.max(260, selected.width * (maxHeight / selected.height)))
+      : 0
+  const modalHeight =
+    selected && modalRatio
+      ? Math.min(maxHeight, Math.max(180, selected.height * (maxWidth / selected.width)))
+      : 0
+
+  const modalImageStyle =
+    selected && modalWidth && modalHeight
+      ? {
+          width: `${Math.min(modalWidth, maxWidth)}px`,
+          maxWidth: `calc(100vw - 32px)`,
+          height: `${Math.min(modalHeight, maxHeight)}px`,
+          maxHeight: `calc(100vh - 64px)`,
+          display: 'block',
+          margin: '2vh auto 0',
+          objectFit: 'contain' as const,
+        }
+      : undefined
+
   return (
     // Unlike the other sections, this one is full-bleed: the leaf field runs
     // edge to edge, so the container that holds it cannot be the `max-w-7xl`
@@ -116,6 +182,7 @@ export default function Gallery() {
             photo={feature}
             variant="feature"
             className="aspect-[4/3] md:col-span-7 md:row-span-2 md:aspect-auto"
+            onOpen={setSelected}
           />
           {rest.map((photo) => (
             <Frame
@@ -123,10 +190,45 @@ export default function Gallery() {
               photo={photo}
               variant="stacked"
               className="aspect-[3/2] md:col-span-5"
+              onOpen={setSelected}
             />
           ))}
         </div>
       </div>
+
+      {selected &&
+        createPortal(
+          <div
+            className="fixed inset-0 flex items-center justify-center bg-[#0b1a11]/80 p-3 backdrop-blur-sm sm:p-6"
+            style={{ zIndex: 2147483647 }}
+            onClick={() => setSelected(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Expanded photo"
+          >
+            <div className="relative flex items-center justify-center pt-8" style={{ zIndex: 2147483647 }}>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="absolute top-0 right-0 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-cream/20 bg-[#0b1a11]/85 text-lg text-parchment shadow-lg transition-colors hover:bg-[#0b1a11] sm:h-10 sm:w-10"
+                aria-label="Close photo"
+              >
+                ×
+              </button>
+              <img
+                src={`/images/${selected.base}-1200.webp`}
+                srcSet={srcSet(selected.base, 'webp')}
+                sizes={`${Math.min(modalWidth || 0, 1200)}px`}
+                alt={selected.alt}
+                width={selected.width}
+                height={selected.height}
+                className="rounded-lg object-contain shadow-2xl"
+                style={modalImageStyle}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </section>
   )
 }

@@ -57,39 +57,26 @@ export default function MatrixName({ decodeKey }: { decodeKey: boolean }) {
     }
   }, [decodeKey])
 
-  // Ambient glitch: every few seconds a couple of characters briefly flip to
-  // binary, so the wordmark keeps a faint pulse even when idle.
-  useEffect(() => {
-    if (prefersReducedMotion()) return
-    let restore: number | undefined
-    const id = window.setInterval(() => {
-      if (decoding.current) return
-      const indices = new Set<number>()
-      const count = 1 + Math.floor(Math.random() * 2)
-      while (indices.size < count) {
-        const i = Math.floor(Math.random() * NAME.length)
-        if (NAME[i] !== ' ') indices.add(i)
-      }
-      setChars(NAME.split('').map((ch, i) => (indices.has(i) ? randomBit() : ch)))
-      restore = window.setTimeout(() => {
-        if (!decoding.current) setChars(NAME.split(''))
-      }, 180)
-    }, 2800)
-    return () => {
-      window.clearInterval(id)
-      window.clearTimeout(restore)
-    }
-  }, [])
-
   const renderChars = (from: number, to: number) =>
-    chars.slice(from, to).map((ch, i) => (
-      <span key={from + i} aria-hidden="true">
-        {ch}
-      </span>
-    ))
+    chars.slice(from, to).map((ch, i) => {
+      const isBit = ch === '0' || ch === '1'
+      const isSpace = ch === ' '
+
+      return (
+        <span
+          key={from + i}
+          aria-hidden="true"
+          className={`matrix-char ${isBit ? 'matrix-bit' : 'matrix-letter'} ${
+            isSpace ? 'matrix-space' : ''
+          }`}
+        >
+          {isSpace ? '\u00A0' : ch}
+        </span>
+      )
+    })
 
   return (
-    <span className="whitespace-nowrap">
+    <span className="matrix-name inline-flex whitespace-nowrap leading-none">
       {/* Real name for screen readers; the animated glyphs are decorative. */}
       <span className="sr-only">{NAME.trim()}</span>
       <span className="hidden sm:inline">{renderChars(0, FIRST.length)}</span>

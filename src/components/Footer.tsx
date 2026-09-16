@@ -1,9 +1,9 @@
 //import FooterMole from './FooterMole'
 
 const LINKS = [
-  { href: '#about', label: 'About' },
   { href: '#programming', label: 'Projects' },
   { href: '#photography', label: 'Photography' },
+  { href: '#about', label: 'About' },
 ] as const
 
 export default function Footer() {

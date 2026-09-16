@@ -10,8 +10,8 @@ type NavLink = {
 
 const NAV_LINKS: readonly NavLink[] = [
   { href: '#programming', label: 'Projects', external: false },
-  { href: '#about', label: 'About', external: false },
   { href: '#photography', label: 'Photography', external: false },
+  { href: '#about', label: 'About', external: false },
   { href: 'https://github.com/BrandonGuergo', label: 'GitHub', external: true },
 ]
 
@@ -145,15 +145,15 @@ export default function Header() {
       <header
         className={`fixed inset-x-0 top-0 z-100 py-4 transition-colors duration-500 ${
           scrolled || isOpen
-            ? 'border-b border-soil/15 bg-parchment/93 backdrop-blur-2xl'
+            ? 'border-b border-sage-light/20 bg-linear-to-br from-[#171208] via-[#16281c] to-[#0b1a11] backdrop-blur-2xl'
             : 'border-b border-transparent bg-transparent'
         }`}
       >
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 md:px-8">
           <a
             href="#top"
-            className={`font-serif text-2xl font-semibold tracking-wider transition-colors duration-500 ${
-              scrolled || isOpen ? 'text-black' : 'text-white'
+            className={`font-serif text-xl font-semibold tracking-wider transition-colors duration-500 ${
+              scrolled || isOpen ? 'text-parchment' : 'text-white'
             }`}
           >
             <MatrixName decodeKey={scrolled || isOpen} />
@@ -171,13 +171,13 @@ export default function Header() {
                     className={`relative pb-1 text-xs font-medium tracking-widest uppercase transition-colors duration-500 ${
                       scrolled
                         ? isActive
-                          ? 'text-emerald'
-                          : 'text-muted hover:text-emerald'
+                          ? 'text-sage-light'
+                          : 'text-cream/75 hover:text-parchment'
                         : isActive
                           ? 'text-parchment'
                           : 'text-cream/60 hover:text-parchment'
                     } after:absolute after:bottom-0 after:left-0 after:h-0.5 after:transition-all after:duration-300 after:content-[''] ${
-                      scrolled ? 'after:bg-emerald' : 'after:bg-sage-light'
+                      scrolled ? 'after:bg-sage-light' : 'after:bg-sage-light'
                     } ${isActive ? 'after:w-full' : 'after:w-0 hover:after:w-full'}`}
                     {...(link.external
                       ? { target: '_blank', rel: 'noopener noreferrer' }
@@ -194,7 +194,7 @@ export default function Header() {
           <button
             ref={hamburgerRef}
             type="button"
-            className="hamburger flex h-10 w-10 cursor-pointer flex-col justify-center gap-1 rounded-2xl p-1.5 transition-colors hover:bg-emerald/10 md:hidden"
+              className="hamburger flex h-10 w-10 cursor-pointer flex-col justify-center gap-1 rounded-2xl p-1.5 transition-colors hover:bg-parchment/10 md:hidden"
             aria-label="Toggle menu"
             aria-expanded={isOpen}
             aria-controls="mobileDrawer"
@@ -208,7 +208,7 @@ export default function Header() {
               <span
                 key={idx}
                 className={`block h-0.5 w-6 rounded-sm transition-all duration-300 ${
-                  scrolled || isOpen ? 'bg-emerald' : 'bg-parchment'
+                  scrolled || isOpen ? 'bg-parchment' : 'bg-parchment'
                 } ${state}`}
               ></span>
             ))}

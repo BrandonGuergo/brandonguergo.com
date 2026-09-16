@@ -5,7 +5,7 @@ type Project = {
   title: string
   description: string
   tags: readonly string[]
-  link: string
+  link?: string
 }
 
 const PROJECTS: readonly Project[] = [
@@ -25,6 +25,22 @@ const PROJECTS: readonly Project[] = [
     tags: ['Data Structures', 'Self-Balancing', 'Rotations'],
     link: 'https://github.com/BrandonGuergo/Custom-AVL-Tree',
   },
+  {
+    num: '03',
+    title: 'Intralocutor.com',
+    description:
+      'A full-featured web application for a conversational AI product, built to deliver a polished user experience with scalable frontend architecture.',
+    tags: ['React', 'Vite', 'Web App', 'Frontend'],
+    link: 'https://intralocutor.com',
+  },
+  {
+    num: '04',
+    title: 'Home Market',
+    description:
+      'An iPhone app in Swift for a local goods marketplace, currently in development and focused on neighborhood discovery and simple product browsing.',
+    tags: ['In Development', 'Swift', 'iPhone App', 'Marketplace'],
+    link: '',
+  },
 ]
 
 export default function Projects() {
@@ -36,14 +52,9 @@ export default function Projects() {
       <SectionHeading eyebrow="Built From Scratch" title="My" accent="Projects" index="02" />
 
       <ul className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2">
-        {PROJECTS.map((project) => (
-          <li key={project.link}>
-            <a
-              href={project.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0"
-            >
+        {PROJECTS.map((project) => {
+          const cardContent = (
+            <>
               {/* Accent bar that fills on hover. */}
               <span className="absolute top-0 left-0 h-0 w-0.5 bg-linear-to-b from-emerald to-sage transition-all duration-300 group-hover:h-full" />
 
@@ -55,7 +66,7 @@ export default function Projects() {
                   {project.title}
                 </h3>
                 <span className="ml-auto text-soil/35 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-emerald motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0">
-                  ↗
+                  {project.link ? '↗' : '•'}
                 </span>
               </div>
 
@@ -71,9 +82,28 @@ export default function Projects() {
                   </li>
                 ))}
               </ul>
-            </a>
-          </li>
-        ))}
+            </>
+          )
+
+          return (
+            <li key={project.link || project.title} className="flex h-full">
+              {project.link ? (
+                <a
+                  href={project.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0"
+                >
+                  {cardContent}
+                </a>
+              ) : (
+                <div className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0">
+                  {cardContent}
+                </div>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </section>
   )

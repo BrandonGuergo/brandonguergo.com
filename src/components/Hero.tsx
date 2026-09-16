@@ -4,7 +4,7 @@ import PlantScene from './PlantScene'
 const META = [
   { label: 'Based in', value: 'Florida, USA' },
   { label: 'Building', value: 'AI integrated web-apps' },
-  { label: 'Shooting', value: 'Landscape & wildlife' },
+  { label: 'Photographing', value: 'Landscape & wildlife' },
 ] as const
 
 const INDEX = [
@@ -55,7 +55,7 @@ export default function Hero() {
               </p>
 
               <h1 className="font-serif text-[clamp(3.5rem,11vw,7.5rem)] leading-[0.86] font-medium tracking-tight text-parchment">
-                <em className="text-emerald-pop italic">Brandon</em>
+                <em className="hero-name-sweep text-emerald-pop italic">Brandon</em>
                 <br />
                 Guergo
               </h1>
