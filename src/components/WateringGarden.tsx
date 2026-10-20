@@ -18,6 +18,9 @@ const FLOWER_SPROUT_CHANCE = 0.036
 const CAN_SCALE = 0.58
 const CAN_TILT = -0.3
 const CAN_TILT_RESPONSE = 18
+// Side of the square cursor canvas, in CSS px. Roomy enough for the scaled
+// artwork at full tilt.
+const CAN_BOX = 160
 
 // Rose position in the unscaled can artwork. The can is mirrored horizontally
 // at draw time, so the actual local x coordinate is negative.
@@ -95,8 +98,12 @@ export default function WateringGarden({
 }: {
   className?: string
 }) {
+  // Two canvases, split by how each moves on scroll. The garden (drops and
+  // flowers) lives inside the section, so the compositor scrolls it with the
+  // page and scrolling costs no redraw. The can is a cursor, so it sits on a
+  // small fixed canvas moved by transform and stays put while the page scrolls.
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
+  const canCanvasRef = useRef<HTMLCanvasElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
 
@@ -108,15 +115,16 @@ export default function WateringGarden({
     if (!mounted) return
 
     const canvas = canvasRef.current
-    const root = rootRef.current
+    const canCanvas = canCanvasRef.current
     const anchor = anchorRef.current
 
-    if (!canvas || !root || !anchor) return
+    if (!canvas || !canCanvas || !anchor) return
 
     const section = anchor.parentElement
     const ctx = canvas.getContext('2d', { alpha: true })
+    const canCtx = canCanvas.getContext('2d', { alpha: true })
 
-    if (!section || !ctx) return
+    if (!section || !ctx || !canCtx) return
 
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -125,10 +133,16 @@ export default function WateringGarden({
     const finePointer = window.matchMedia('(pointer: fine)').matches
     const interactive = finePointer && !reduceMotion
 
+    // Garden canvas size, which is the section's. The ground is its bottom.
     let width = 0
     let height = 0
-    let groundY = 0
     let dpr = 1
+    // Section's viewport offset, re-measured whenever pointer coordinates are
+    // converted, since content above it can reflow without resizing it.
+    let sectionLeft = 0
+    let sectionTop = 0
+    let canShown = false
+    let drawnAngle = NaN
 
     let drops: Drop[] = []
     let flowers: Flower[] = []
@@ -147,12 +161,11 @@ export default function WateringGarden({
     let canAngle = 0
 
     const pointer = {
-      // Viewport coordinates used directly by the fixed canvas.
+      // Section-local coordinates, where the shower is emitted.
       x: 0,
       y: 0,
 
-      // Viewport coordinates are retained separately. This is what allows the
-      // custom cursor to remain stationary on-screen while the page scrolls.
+      // Viewport coordinates, which place the fixed can canvas.
       clientX: 0,
       clientY: 0,
 
@@ -169,31 +182,31 @@ export default function WateringGarden({
     // -------------------------------------------------------------------------
 
     const positionPointer = () => {
-      pointer.x = pointer.clientX
-      pointer.y = pointer.clientY
-    }
-
-    const updateSectionBounds = () => {
-      groundY = section.getBoundingClientRect().bottom
-    }
-
-    const pointerIsInsideSection = () => {
       const rect = section.getBoundingClientRect()
-
-      return (
-        pointer.clientX >= 0 &&
-        pointer.clientX <= window.innerWidth &&
-        pointer.clientY >= rect.top &&
-        pointer.clientY <= rect.bottom
-      )
+      sectionLeft = rect.left
+      sectionTop = rect.top
+      pointer.x = pointer.clientX - sectionLeft
+      pointer.y = pointer.clientY - sectionTop
     }
+
+    // Reads the offsets `positionPointer` just measured.
+    const pointerIsInsideSection = () =>
+      pointer.clientX >= 0 &&
+      pointer.clientX <= window.innerWidth &&
+      pointer.y >= 0 &&
+      pointer.y <= height
 
     const updatePointer = (event: PointerEvent) => {
       pointer.clientX = event.clientX
       pointer.clientY = event.clientY
 
-      positionPointer()
+      // Off screen the pointer cannot be inside the section, so skip the
+      // layout read on every move elsewhere on the page.
+      if (inView || pointer.watering) positionPointer()
       pointer.visible = true
+      // Set straight from the event rather than on the next frame, so the can
+      // tracks like a native cursor.
+      canCanvas.style.transform = `translate3d(${pointer.clientX - CAN_BOX / 2}px, ${pointer.clientY - CAN_BOX / 2}px, 0)`
     }
 
     // -------------------------------------------------------------------------
@@ -381,7 +394,7 @@ export default function WateringGarden({
             clamp01((age - fadeStart) / flower.fadeMs)
 
       const stemHeight = flower.height * grow
-      const baseY = groundY + 2
+      const baseY = height + 2
 
       const topX = flower.x + flower.lean * grow
       const topY = baseY - stemHeight
@@ -489,71 +502,72 @@ export default function WateringGarden({
     // Watering can
     // -----------------------------------------------------------------------------
 
+    // Drawn about the centre of its own small canvas; the canvas itself is
+    // what follows the pointer.
     const drawCan = () => {
-      if (!pointer.visible || !interactive) return
+      canCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      canCtx.clearRect(0, 0, CAN_BOX, CAN_BOX)
 
-      ctx.save()
+      canCtx.save()
 
-      // Pointer coordinates are used directly; no positional interpolation is
-      // applied, so this behaves like a native cursor rather than a follower.
-      ctx.translate(pointer.x, pointer.y)
-      ctx.rotate(canAngle)
+      canCtx.translate(CAN_BOX / 2, CAN_BOX / 2)
+      canCtx.rotate(canAngle)
 
       // Artwork is authored facing right and permanently mirrored left.
-      ctx.scale(-CAN_SCALE, CAN_SCALE)
+      canCtx.scale(-CAN_SCALE, CAN_SCALE)
 
-      ctx.lineJoin = 'round'
-      ctx.lineCap = 'round'
+      canCtx.lineJoin = 'round'
+      canCtx.lineCap = 'round'
 
       // Main copper carry handle. Drawn first so the body naturally overlaps
       // the lower attachment points.
-      ctx.lineWidth = 5
-      ctx.strokeStyle = COPPER_DARK
+      canCtx.lineWidth = 5
+      canCtx.strokeStyle = COPPER_DARK
 
-      ctx.beginPath()
-      ctx.moveTo(-10, -10)
-      ctx.bezierCurveTo(-6, -38, 26, -39, 29, -10)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-10, -10)
+      canCtx.bezierCurveTo(-6, -38, 26, -39, 29, -10)
+      canCtx.stroke()
 
-      ctx.lineWidth = 3.3
-      ctx.strokeStyle = COPPER
+      canCtx.lineWidth = 3.3
+      canCtx.strokeStyle = COPPER
 
-      ctx.beginPath()
-      ctx.moveTo(-10, -10)
-      ctx.bezierCurveTo(-6, -38, 26, -39, 29, -10)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-10, -10)
+      canCtx.bezierCurveTo(-6, -38, 26, -39, 29, -10)
+      canCtx.stroke()
 
       // Handle highlight
-      ctx.lineWidth = 1.1
-      ctx.strokeStyle = COPPER_LIGHT
-      ctx.globalAlpha = 0.8
+      canCtx.lineWidth = 1.1
+      canCtx.strokeStyle = COPPER_LIGHT
+      canCtx.globalAlpha = 0.8
 
-      ctx.beginPath()
-      ctx.moveTo(-8, -11)
-      ctx.bezierCurveTo(-3, -34, 23, -35, 27, -11)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-8, -11)
+      canCtx.bezierCurveTo(-3, -34, 23, -35, 27, -11)
+      canCtx.stroke()
 
-      ctx.globalAlpha = 1
+      canCtx.globalAlpha = 1
 
       // Rear grip
-      ctx.lineWidth = 4
-      ctx.strokeStyle = COPPER_DARK
+      canCtx.lineWidth = 4
+      canCtx.strokeStyle = COPPER_DARK
 
-      ctx.beginPath()
-      ctx.moveTo(-17, -4)
-      ctx.bezierCurveTo(-32, -12, -34, 5, -23, 12)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-17, -4)
+      canCtx.bezierCurveTo(-32, -12, -34, 5, -23, 12)
+      canCtx.stroke()
 
-      ctx.lineWidth = 2.6
-      ctx.strokeStyle = COPPER
+      canCtx.lineWidth = 2.6
+      canCtx.strokeStyle = COPPER
 
-      ctx.beginPath()
-      ctx.moveTo(-17, -4)
-      ctx.bezierCurveTo(-32, -12, -34, 5, -23, 12)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-17, -4)
+      canCtx.bezierCurveTo(-32, -12, -34, 5, -23, 12)
+      canCtx.stroke()
 
       // Tapered enamel spout
-      const spoutGradient = ctx.createLinearGradient(
+      const spoutGradient = canCtx.createLinearGradient(
         12,
         -4,
         53,
@@ -564,39 +578,39 @@ export default function WateringGarden({
       spoutGradient.addColorStop(0.45, CAN_GREEN)
       spoutGradient.addColorStop(1, CAN_GREEN_LIGHT)
 
-      ctx.fillStyle = spoutGradient
-      ctx.strokeStyle = CAN_GREEN_DARK
-      ctx.lineWidth = 1.4
+      canCtx.fillStyle = spoutGradient
+      canCtx.strokeStyle = CAN_GREEN_DARK
+      canCtx.lineWidth = 1.4
 
-      ctx.beginPath()
-      ctx.moveTo(12, -7)
-      ctx.lineTo(48, -19)
-      ctx.lineTo(53, -14)
-      ctx.lineTo(50, -9)
-      ctx.lineTo(12, 3)
-      ctx.closePath()
-      ctx.fill()
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(12, -7)
+      canCtx.lineTo(48, -19)
+      canCtx.lineTo(53, -14)
+      canCtx.lineTo(50, -9)
+      canCtx.lineTo(12, 3)
+      canCtx.closePath()
+      canCtx.fill()
+      canCtx.stroke()
 
-      ctx.strokeStyle = 'rgba(225,245,235,0.35)'
-      ctx.lineWidth = 1
+      canCtx.strokeStyle = 'rgba(225,245,235,0.35)'
+      canCtx.lineWidth = 1
 
-      ctx.beginPath()
-      ctx.moveTo(16, -6)
-      ctx.lineTo(47, -16)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(16, -6)
+      canCtx.lineTo(47, -16)
+      canCtx.stroke()
 
       // Perforated rose head. Keeping this visually prominent is important:
       // it makes the object immediately identifiable as a watering can.
-      ctx.save()
-      ctx.translate(55, -15)
-      ctx.rotate(-0.28)
+      canCtx.save()
+      canCtx.translate(55, -15)
+      canCtx.rotate(-0.28)
 
-      ctx.fillStyle = CAN_GREEN_DARK
-      ctx.fillRect(-6, -4, 9, 8)
+      canCtx.fillStyle = CAN_GREEN_DARK
+      canCtx.fillRect(-6, -4, 9, 8)
 
-      ctx.beginPath()
-      ctx.ellipse(
+      canCtx.beginPath()
+      canCtx.ellipse(
         5,
         0,
         9,
@@ -605,9 +619,9 @@ export default function WateringGarden({
         0,
         Math.PI * 2,
       )
-      ctx.fill()
+      canCtx.fill()
 
-      const roseGradient = ctx.createRadialGradient(
+      const roseGradient = canCtx.createRadialGradient(
         3,
         -3,
         1,
@@ -629,12 +643,12 @@ export default function WateringGarden({
         CAN_GREEN_DARK,
       )
 
-      ctx.fillStyle = roseGradient
-      ctx.strokeStyle = 'rgba(25,88,72,0.9)'
-      ctx.lineWidth = 1
+      canCtx.fillStyle = roseGradient
+      canCtx.strokeStyle = 'rgba(25,88,72,0.9)'
+      canCtx.lineWidth = 1
 
-      ctx.beginPath()
-      ctx.ellipse(
+      canCtx.beginPath()
+      canCtx.ellipse(
         3,
         0,
         7.5,
@@ -643,10 +657,10 @@ export default function WateringGarden({
         0,
         Math.PI * 2,
       )
-      ctx.fill()
-      ctx.stroke()
+      canCtx.fill()
+      canCtx.stroke()
 
-      ctx.fillStyle = 'rgba(36,70,60,0.72)'
+      canCtx.fillStyle = 'rgba(36,70,60,0.72)'
 
       const holes = [
         [0, 0],
@@ -661,22 +675,22 @@ export default function WateringGarden({
       ] as const
 
       for (const [hx, hy] of holes) {
-        ctx.beginPath()
-        ctx.arc(
+        canCtx.beginPath()
+        canCtx.arc(
           3 + hx,
           hy,
           0.75,
           0,
           Math.PI * 2,
         )
-        ctx.fill()
+        canCtx.fill()
       }
 
-      ctx.strokeStyle = 'rgba(240,250,242,0.45)'
-      ctx.lineWidth = 0.8
+      canCtx.strokeStyle = 'rgba(240,250,242,0.45)'
+      canCtx.lineWidth = 0.8
 
-      ctx.beginPath()
-      ctx.ellipse(
+      canCtx.beginPath()
+      canCtx.ellipse(
         2,
         -0.5,
         6,
@@ -685,12 +699,12 @@ export default function WateringGarden({
         Math.PI * 0.75,
         Math.PI * 1.55,
       )
-      ctx.stroke()
+      canCtx.stroke()
 
-      ctx.restore()
+      canCtx.restore()
 
       // Cylindrical enamel body
-      const bodyGradient = ctx.createLinearGradient(
+      const bodyGradient = canCtx.createLinearGradient(
         -19,
         0,
         20,
@@ -706,24 +720,24 @@ export default function WateringGarden({
       bodyGradient.addColorStop(0.82, CAN_GREEN)
       bodyGradient.addColorStop(1, CAN_GREEN_DARK)
 
-      ctx.fillStyle = bodyGradient
-      ctx.strokeStyle = CAN_GREEN_DARK
-      ctx.lineWidth = 1.5
+      canCtx.fillStyle = bodyGradient
+      canCtx.strokeStyle = CAN_GREEN_DARK
+      canCtx.lineWidth = 1.5
 
-      ctx.beginPath()
-      ctx.moveTo(-19, -10)
-      ctx.bezierCurveTo(-20, -3, -20, 14, -18, 18)
-      ctx.quadraticCurveTo(0, 22, 19, 18)
-      ctx.bezierCurveTo(20, 10, 20, -3, 18, -10)
-      ctx.closePath()
-      ctx.fill()
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-19, -10)
+      canCtx.bezierCurveTo(-20, -3, -20, 14, -18, 18)
+      canCtx.quadraticCurveTo(0, 22, 19, 18)
+      canCtx.bezierCurveTo(20, 10, 20, -3, 18, -10)
+      canCtx.closePath()
+      canCtx.fill()
+      canCtx.stroke()
 
       // Top rim / lid
-      ctx.fillStyle = CAN_GREEN_DARK
+      canCtx.fillStyle = CAN_GREEN_DARK
 
-      ctx.beginPath()
-      ctx.ellipse(
+      canCtx.beginPath()
+      canCtx.ellipse(
         0,
         -10,
         19,
@@ -732,9 +746,9 @@ export default function WateringGarden({
         0,
         Math.PI * 2,
       )
-      ctx.fill()
+      canCtx.fill()
 
-      const topGradient = ctx.createLinearGradient(
+      const topGradient = canCtx.createLinearGradient(
         0,
         -15,
         0,
@@ -744,10 +758,10 @@ export default function WateringGarden({
       topGradient.addColorStop(0, CAN_GREEN_LIGHT)
       topGradient.addColorStop(1, CAN_GREEN)
 
-      ctx.fillStyle = topGradient
+      canCtx.fillStyle = topGradient
 
-      ctx.beginPath()
-      ctx.ellipse(
+      canCtx.beginPath()
+      canCtx.ellipse(
         0,
         -11,
         17,
@@ -756,13 +770,13 @@ export default function WateringGarden({
         0,
         Math.PI * 2,
       )
-      ctx.fill()
+      canCtx.fill()
 
-      ctx.strokeStyle = 'rgba(215,240,225,0.55)'
-      ctx.lineWidth = 1
+      canCtx.strokeStyle = 'rgba(215,240,225,0.55)'
+      canCtx.lineWidth = 1
 
-      ctx.beginPath()
-      ctx.ellipse(
+      canCtx.beginPath()
+      canCtx.ellipse(
         0,
         -12,
         11,
@@ -771,46 +785,46 @@ export default function WateringGarden({
         Math.PI,
         Math.PI * 2,
       )
-      ctx.stroke()
+      canCtx.stroke()
 
       // Lid grip
-      ctx.strokeStyle = CAN_GREEN_DARK
-      ctx.lineWidth = 1.5
+      canCtx.strokeStyle = CAN_GREEN_DARK
+      canCtx.lineWidth = 1.5
 
-      ctx.beginPath()
-      ctx.moveTo(-4, -13)
-      ctx.quadraticCurveTo(0, -17, 5, -13)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-4, -13)
+      canCtx.quadraticCurveTo(0, -17, 5, -13)
+      canCtx.stroke()
 
       // Stamped-metal body bands
-      ctx.strokeStyle = 'rgba(20,75,60,0.35)'
-      ctx.lineWidth = 0.9
+      canCtx.strokeStyle = 'rgba(20,75,60,0.35)'
+      canCtx.lineWidth = 0.9
 
-      ctx.beginPath()
-      ctx.moveTo(-17, 6)
-      ctx.quadraticCurveTo(0, 9, 18, 6)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-17, 6)
+      canCtx.quadraticCurveTo(0, 9, 18, 6)
+      canCtx.stroke()
 
-      ctx.beginPath()
-      ctx.moveTo(-17, 13)
-      ctx.quadraticCurveTo(0, 16, 18, 13)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(-17, 13)
+      canCtx.quadraticCurveTo(0, 16, 18, 13)
+      canCtx.stroke()
 
       // Enamel highlight
-      ctx.strokeStyle = 'rgba(235,250,242,0.3)'
-      ctx.lineWidth = 1.1
+      canCtx.strokeStyle = 'rgba(235,250,242,0.3)'
+      canCtx.lineWidth = 1.1
 
-      ctx.beginPath()
-      ctx.moveTo(8, -6)
-      ctx.quadraticCurveTo(11, 3, 9, 14)
-      ctx.stroke()
+      canCtx.beginPath()
+      canCtx.moveTo(8, -6)
+      canCtx.quadraticCurveTo(11, 3, 9, 14)
+      canCtx.stroke()
 
       // Bottom rim
-      ctx.strokeStyle = CAN_GREEN_DARK
-      ctx.lineWidth = 1.5
+      canCtx.strokeStyle = CAN_GREEN_DARK
+      canCtx.lineWidth = 1.5
 
-      ctx.beginPath()
-      ctx.ellipse(
+      canCtx.beginPath()
+      canCtx.ellipse(
         0,
         18,
         18,
@@ -819,20 +833,20 @@ export default function WateringGarden({
         0,
         Math.PI,
       )
-      ctx.stroke()
+      canCtx.stroke()
 
       // Copper handle attachment caps
-      ctx.fillStyle = COPPER
+      canCtx.fillStyle = COPPER
 
-      ctx.beginPath()
-      ctx.arc(-10, -9, 2.2, 0, Math.PI * 2)
-      ctx.fill()
+      canCtx.beginPath()
+      canCtx.arc(-10, -9, 2.2, 0, Math.PI * 2)
+      canCtx.fill()
 
-      ctx.beginPath()
-      ctx.arc(18, -8, 2.2, 0, Math.PI * 2)
-      ctx.fill()
+      canCtx.beginPath()
+      canCtx.arc(18, -8, 2.2, 0, Math.PI * 2)
+      canCtx.fill()
 
-      ctx.restore()
+      canCtx.restore()
     }
 
     // -------------------------------------------------------------------------
@@ -849,15 +863,25 @@ export default function WateringGarden({
 
       drawDrops()
 
-      drawCan()
-
       blank = isIdle()
     }
 
-    const isIdle = () =>
-      !drops.length &&
-      !flowers.length &&
-      !(pointer.visible && interactive)
+    const isIdle = () => !drops.length && !flowers.length
+
+    // Shows or hides the can, and redraws it only when its tilt has moved.
+    const syncCan = () => {
+      const show = pointer.visible && interactive
+
+      if (show !== canShown) {
+        canShown = show
+        canCanvas.style.visibility = show ? 'visible' : 'hidden'
+      }
+
+      if (show && canAngle !== drawnAngle) {
+        drawnAngle = canAngle
+        drawCan()
+      }
+    }
 
     const step = (now: number) => {
       raf = requestAnimationFrame(step)
@@ -880,6 +904,10 @@ export default function WateringGarden({
         canAngle = targetAngle
       }
 
+      // The section moves under a still pointer while the page scrolls, so
+      // the spout is re-measured each frame it is pouring.
+      if (pointer.watering) positionPointer()
+
       emitWater(now)
 
       for (let i = drops.length - 1; i >= 0; i--) {
@@ -890,7 +918,7 @@ export default function WateringGarden({
         drop.y += drop.vy * dt
 
         // A droplet that reaches the soil has a small chance to germinate.
-        if (drop.y >= groundY - 1) {
+        if (drop.y >= height - 1) {
           if (Math.random() < FLOWER_SPROUT_CHANCE) {
             createFlower(drop.x, now)
           }
@@ -919,6 +947,8 @@ export default function WateringGarden({
         )
       })
 
+      syncCan()
+
       if (blank && isIdle()) return
 
       render(now)
@@ -937,10 +967,7 @@ export default function WateringGarden({
         window.devicePixelRatio || 1,
         MAX_DPR,
       )
-      updateSectionBounds()
-
-      // The section is observed too, and its reflows usually leave the fixed
-      // canvas the same size. Reassigning width/height reallocates the
+      // Reassigning width/height reallocates the
       // backing store even when the value is unchanged, so only do it on a
       // real change.
       if (
@@ -961,6 +988,10 @@ export default function WateringGarden({
           1,
           Math.round(height * dpr),
         )
+
+        canCanvas.width = Math.round(CAN_BOX * dpr)
+        canCanvas.height = Math.round(CAN_BOX * dpr)
+        drawnAngle = NaN
       }
 
       if (pointer.visible || pointer.watering) {
@@ -991,13 +1022,12 @@ export default function WateringGarden({
     const onPointerMove = (event: PointerEvent) => {
       updatePointer(event)
 
-      // While the section is off screen the pointer cannot be inside it, so
-      // skip the layout read on every move elsewhere on the page.
       if (!pointer.watering) {
         pointer.visible = inView && pointerIsInsideSection()
       }
 
       syncCursor()
+      syncCan()
     }
 
     const onPointerDown = (event: PointerEvent) => {
@@ -1005,7 +1035,7 @@ export default function WateringGarden({
 
       updatePointer(event)
 
-      if (!pointerIsInsideSection()) {
+      if (!inView || !pointerIsInsideSection()) {
         pointer.visible = false
         syncCursor()
         return
@@ -1044,33 +1074,18 @@ export default function WateringGarden({
     }
 
     /*
-     * Both the native cursor and portal canvas are viewport-relative.
-     *
-     * When the page scrolls without the mouse moving, clientX/clientY stay
-     * constant while the section's bounding rectangle moves. Recomputing local
-     * coordinates here cancels that motion and keeps the can visually locked
-     * beneath the real pointer.
-     *
-     * Rendering immediately instead of waiting for the next animation frame
-     * prevents the familiar one-frame "drag behind" during fast scrolling.
+     * The garden scrolls with the page and the can is fixed, so scrolling
+     * needs no redraw. A still pointer can still be carried out of the
+     * section, though, so the can's visibility is re-checked.
      */
     const onScroll = () => {
-      // Off screen nothing is drawn against the ground line; the observer
-      // re-measures it when the section comes back into view.
-      if (!inView && !pointer.visible && !pointer.watering) return
-
-      updateSectionBounds()
-
-      if (!pointer.visible && !pointer.watering) return
+      if (!pointer.visible || pointer.watering) return
 
       positionPointer()
-
-      if (!pointer.watering) {
-        pointer.visible = pointerIsInsideSection()
-      }
+      pointer.visible = inView && pointerIsInsideSection()
 
       syncCursor()
-      render(performance.now())
+      syncCan()
     }
 
     // -------------------------------------------------------------------------
@@ -1100,7 +1115,6 @@ export default function WateringGarden({
           entry.isIntersecting &&
           !document.hidden
         ) {
-          updateSectionBounds()
           start()
         } else {
           stop()
@@ -1217,20 +1231,21 @@ export default function WateringGarden({
         ref={anchorRef}
         aria-hidden="true"
         className={`pointer-events-none ${className}`}
-      />
+      >
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full"
+        />
+      </div>
 
       {mounted &&
         createPortal(
-          <div
-            ref={rootRef}
+          <canvas
+            ref={canCanvasRef}
             aria-hidden="true"
-            className="pointer-events-none fixed inset-0 z-[9999]"
-          >
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 h-full w-full"
-            />
-          </div>,
+            className="pointer-events-none invisible fixed top-0 left-0 z-[9999] will-change-transform"
+            style={{ width: CAN_BOX, height: CAN_BOX }}
+          />,
           document.body,
         )}
     </>

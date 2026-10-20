@@ -185,4 +185,7 @@ body::before {
   pointer-events: none;
   z-index: 1000;
   opacity: 0.5;
+  /* Its own compositor layer, so the noise is rasterised once rather than
+     repainted with whatever animates or scrolls beneath it. */
+  will-change: transform;
 }
