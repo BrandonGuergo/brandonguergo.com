@@ -8,39 +8,57 @@ on:
     branches:
       - main
 
+# A newer push to a PR supersedes its in-flight check. Deploys to main queue
+# instead, so a live deployment is never cut off part-way.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
-      pages: write
-      id-token: write
-    
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-      
+
+      # `npm ci` installs exactly what the lockfile pins and skips resolution,
+      # which is both faster and reproducible.
       - name: Install dependencies
-        run: npm install
-      
+        run: npm ci
+
       - name: Build
         run: npm run build
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
-      
+
+  # Pull requests build (and typecheck) only; nothing reaches the live site
+  # until it lands on main.
+  deploy:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -455,33 +455,37 @@ export default function PlantScene({
       return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t)
     }
 
-    /** A pointed leaf: two mirrored quadratics from the stem out to the tip. */
-    const drawLeaf = (leaf: Leaf, color: RGB, alpha: number) => {
-      ctx.save()
-      ctx.translate(leaf.x, leaf.y)
-      ctx.rotate(leaf.angle)
+    /**
+     * A pointed leaf: two mirrored quadratics from the stem out to the tip.
+     * Placed with one setTransform rather than save/translate/rotate/restore,
+     * and styled with strings the caller builds once per plant, since a full
+     * scene draws several hundred of these a frame.
+     */
+    const drawLeaf = (leaf: Leaf, fill: string, stroke: string) => {
+      const cos = Math.cos(leaf.angle) * dprScale
+      const sin = Math.sin(leaf.angle) * dprScale
+      ctx.setTransform(cos, sin, -sin, cos, leaf.x * dprScale, leaf.y * dprScale)
       const size = leaf.size
       ctx.beginPath()
       ctx.moveTo(0, 0)
       ctx.quadraticCurveTo(size * 0.45, -size * 0.34, size, 0)
       ctx.quadraticCurveTo(size * 0.45, size * 0.34, 0, 0)
-      ctx.fillStyle = rgba(color, 0.16 * alpha)
+      ctx.fillStyle = fill
       ctx.fill()
       // A midrib, which is most of what makes the shape read as a leaf rather
       // than as a blob at the sizes these are drawn at.
       ctx.beginPath()
       ctx.moveTo(0, 0)
       ctx.lineTo(size * 0.95, 0)
-      ctx.strokeStyle = rgba(color, 0.22 * alpha)
+      ctx.strokeStyle = stroke
       ctx.lineWidth = 0.6
       ctx.stroke()
-      ctx.restore()
     }
 
-    const drawBloom = (bloom: Bloom, color: RGB, alpha: number) => {
+    const drawBloom = (bloom: Bloom, petalFill: string, centreFill: string) => {
       const petals = 5
       const size = bloom.size
-      ctx.fillStyle = rgba(color, 0.16 * alpha)
+      ctx.fillStyle = petalFill
       for (let i = 0; i < petals; i++) {
         const a = bloom.spin + (i / petals) * Math.PI * 2
         ctx.beginPath()
@@ -498,7 +502,7 @@ export default function PlantScene({
       }
       ctx.beginPath()
       ctx.arc(bloom.x, bloom.y, size * 0.34, 0, Math.PI * 2)
-      ctx.fillStyle = rgba(color, 0.34 * alpha)
+      ctx.fillStyle = centreFill
       ctx.fill()
     }
 
@@ -517,10 +521,11 @@ export default function PlantScene({
       const bloomColor = mix(plant.bloom, WITHER_COLOR, w * 0.7)
       const foliageAlpha = alpha * (1 - w * 0.55)
 
+      const stemStroke = rgba(stem, 0.4 * alpha)
       for (const branch of plant.branches) {
         const pts = branch.pts
         if (pts.length < 4) continue
-        ctx.strokeStyle = rgba(stem, 0.4 * alpha)
+        ctx.strokeStyle = stemStroke
         ctx.lineWidth = branch.width
         ctx.beginPath()
         ctx.moveTo(pts[0], pts[1])
@@ -528,8 +533,14 @@ export default function PlantScene({
         ctx.stroke()
       }
 
-      for (const leaf of plant.leaves) drawLeaf(leaf, leafColor, foliageAlpha)
-      for (const bloom of plant.blooms) drawBloom(bloom, bloomColor, foliageAlpha)
+      const leafFill = rgba(leafColor, 0.16 * foliageAlpha)
+      const leafStroke = rgba(leafColor, 0.22 * foliageAlpha)
+      for (const leaf of plant.leaves) drawLeaf(leaf, leafFill, leafStroke)
+      ctx.setTransform(dprScale, 0, 0, dprScale, 0, 0)
+
+      const petalFill = rgba(bloomColor, 0.16 * foliageAlpha)
+      const centreFill = rgba(bloomColor, 0.34 * foliageAlpha)
+      for (const bloom of plant.blooms) drawBloom(bloom, petalFill, centreFill)
     }
 
     /**
@@ -745,6 +756,12 @@ export default function PlantScene({
     }
 
     const onPointerMove = (e: PointerEvent) => {
+      // Off screen the loop is stopped and nothing reads the pointer, so skip
+      // the layout read this would otherwise cost on every move down the page.
+      if (!running) {
+        pointer.active = false
+        return
+      }
       const { x, y } = toLocal(e.clientX, e.clientY)
       const inside = x >= 0 && y >= 0 && x <= width && y <= height
       if (!inside) {
@@ -795,6 +812,7 @@ export default function PlantScene({
       plants.reduce((n, plant) => n + (witherAmount(plant, now) > 0 ? 0 : 1), 0)
 
     const onPointerDown = (e: PointerEvent) => {
+      if (!running) return
       const { x, y } = toLocal(e.clientX, e.clientY)
       if (x < 0 || y < 0 || x > width || y > height) return
 

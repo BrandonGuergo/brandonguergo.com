@@ -145,7 +145,7 @@ export default function Header() {
       <header
         className={`fixed inset-x-0 top-0 z-100 py-4 transition-colors duration-500 ${
           scrolled || isOpen
-            ? 'border-b border-sage-light/20 bg-linear-to-br from-[#171208] via-[#16281c] to-[#0b1a11] backdrop-blur-2xl'
+            ? 'border-b border-sage-light/20 bg-linear-to-br from-[#171208] via-[#16281c] to-[#0b1a11]'
             : 'border-b border-transparent bg-transparent'
         }`}
       >
@@ -222,7 +222,7 @@ export default function Header() {
         id="mobileDrawer"
         ref={drawerRef}
         aria-hidden={!isOpen}
-        className={`fixed top-0 right-0 left-0 z-99 bg-parchment/98 px-6 pt-20 backdrop-blur-3xl transition-[transform,visibility] duration-500 md:hidden ${
+        className={`fixed top-0 right-0 left-0 z-99 bg-parchment/98 px-6 pt-20 transition-[transform,visibility] duration-500 md:hidden ${
           isOpen ? 'translate-y-0 visible' : '-translate-y-full invisible'
         }`}
       >

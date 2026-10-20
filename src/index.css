@@ -1,3 +1,8 @@
+/* Self-hosted variable fonts, bundled and hashed by Vite. Cormorant needs its
+   italic axis too, for the hero name and the section-heading accents. */
+@import '@fontsource-variable/jost';
+@import '@fontsource-variable/cormorant-garamond';
+@import '@fontsource-variable/cormorant-garamond/wght-italic.css';
 @import 'tailwindcss';
 
 /* Palette, fonts and motion, ported from the former tailwind.config.js. */
@@ -18,8 +23,8 @@
   --color-muted: #6b5e4a;
   --color-card: #f8f4ed;
 
-  --font-serif: 'Cormorant Garamond', serif;
-  --font-sans: 'Jost', sans-serif;
+  --font-serif: 'Cormorant Garamond Variable', serif;
+  --font-sans: 'Jost Variable', sans-serif;
 
   --animate-fadeInUp: fadeInUp 1s ease forwards;
 
@@ -180,96 +185,4 @@ body::before {
   pointer-events: none;
   z-index: 1000;
   opacity: 0.5;
-}
-
-/* =========================================================
-   PROCEDURAL DIG-DUG MOLE
-   ========================================================= */
-
-.footer-mole-world {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.footer-tunnel-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* Rough dirt surrounding excavation */
-.mole-tunnel-outer {
-  fill: none;
-  stroke: rgba(34, 20, 13, 0.82);
-  stroke-width: 94px;
-  stroke-linecap: butt;
-  stroke-linejoin: bevel;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Actual playable/digged tunnel */
-.mole-tunnel-inner {
-  fill: none;
-  stroke: rgba(61, 38, 25, 0.96);
-  stroke-width: 78px;
-  stroke-linecap: butt;
-  stroke-linejoin: bevel;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Uneven dirt texture */
-.mole-tunnel-edge {
-  fill: none;
-  stroke: rgba(137, 88, 53, 0.32);
-  stroke-width: 6px;
-  stroke-linecap: butt;
-  stroke-linejoin: bevel;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Mole */
-.footer-mole {
-  position: absolute;
-  width: 64px;
-  height: 46px;
-  z-index: 3;
-
-  /*
-    Position is set in pixels from the SVG's
-    actual rendered coordinates in FooterMole.tsx.
-  */
-  left: 0;
-  top: 0;
-
-  transform-origin: center center;
-}
-
-/* Subtle digging motion only while travelling. */
-.footer-mole svg {
-  animation: mole-dig-wiggle
-    0.28s ease-in-out infinite alternate;
-}
-
-.footer-mole.is-paused svg {
-  animation-play-state: paused;
-}
-
-@keyframes mole-dig-wiggle {
-  from {
-    transform: translateY(-1px);
-  }
-
-  to {
-    transform: translateY(1px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .footer-mole-world {
-    display: none;
-  }
 }

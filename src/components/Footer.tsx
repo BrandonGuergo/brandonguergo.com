@@ -1,5 +1,3 @@
-//import FooterMole from './FooterMole'
-
 const LINKS = [
   { href: '#programming', label: 'Projects' },
   { href: '#photography', label: 'Photography' },
@@ -9,9 +7,6 @@ const LINKS = [
 export default function Footer() {
   return (
     <footer className="relative overflow-hidden bg-[#3b2a1f] text-cream">
-      {/* Animated mole */}
-      {/* <FooterMole /> */}
-
       {/* Footer content */}
       <div className="relative z-20 mx-auto max-w-6xl px-6 py-12 sm:px-8">
         <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">

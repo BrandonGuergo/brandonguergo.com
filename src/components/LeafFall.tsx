@@ -74,6 +74,12 @@ const INKS = [
   [142, 178, 126], // sunlit green
 ] as const
 
+/** Flat wash and vein colour per ink, built once rather than per leaf per frame. */
+const INK_STYLES = INKS.map(([r, g, b]) => `rgb(${r},${g},${b})`)
+const DETAIL_STYLES = INKS.map(
+  ([r, g, b]) => `rgb(${Math.max(0, r - 30)},${Math.max(0, g - 35)},${Math.max(0, b - 28)})`,
+)
+
 /** The misregistered second plate. */
 const REGISTER_INK = 3 // index into INKS, light green behind the nearest leaves
 const REGISTER_OFFSET = 1.3 // px the plate is out by
@@ -528,19 +534,58 @@ export default function LeafFall({
           r: rows * PIXEL * 0.85,
         },
       }
+      bakeTree()
     }
 
-    /** One fillRect per cell, one fillStyle per tone. The tree never moves. */
-    const drawTree = () => {
+    /**
+     * The tree never moves, so its cells are painted once per layout into a
+     * sprite at device resolution and blitted each frame, instead of costing
+     * one fillRect per cell per frame. The sprite's origin is rounded to a
+     * whole device pixel so the blit never resamples.
+     */
+    let treeSprite: { canvas: HTMLCanvasElement; x: number; y: number } | null = null
+
+    const bakeTree = () => {
+      treeSprite = null
       if (!tree) return
-      const { ox, oy } = tree
-      ctx.globalAlpha = 1
-      for (let tone = 0; tone < tree.cells.length; tone++) {
-        ctx.fillStyle = TONE_STYLES[tone]
-        for (const cell of tree.cells[tone]) {
-          ctx.fillRect(ox + cell.x * PIXEL, oy - (cell.y + 1) * PIXEL, PIXEL, PIXEL)
+      let minX = Infinity
+      let maxX = -Infinity
+      let minY = Infinity
+      let maxY = -Infinity
+      for (const tone of tree.cells) {
+        for (const cell of tone) {
+          if (cell.x < minX) minX = cell.x
+          if (cell.x > maxX) maxX = cell.x
+          if (cell.y < minY) minY = cell.y
+          if (cell.y > maxY) maxY = cell.y
         }
       }
+      if (minX > maxX) return
+
+      const { ox, oy } = tree
+      const x = Math.round((ox + minX * PIXEL) * dprScale)
+      const y = Math.round((oy - (maxY + 1) * PIXEL) * dprScale)
+      const sprite = document.createElement('canvas')
+      sprite.width = Math.ceil((maxX - minX + 1) * PIXEL * dprScale) + 1
+      sprite.height = Math.ceil((maxY - minY + 1) * PIXEL * dprScale) + 1
+      const sctx = sprite.getContext('2d')
+      if (!sctx) return
+      sctx.setTransform(dprScale, 0, 0, dprScale, -x, -y)
+      for (let tone = 0; tone < tree.cells.length; tone++) {
+        sctx.fillStyle = TONE_STYLES[tone]
+        for (const cell of tree.cells[tone]) {
+          sctx.fillRect(ox + cell.x * PIXEL, oy - (cell.y + 1) * PIXEL, PIXEL, PIXEL)
+        }
+      }
+      treeSprite = { canvas: sprite, x, y }
+    }
+
+    const drawTree = () => {
+      if (!treeSprite) return
+      ctx.globalAlpha = 1
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.drawImage(treeSprite.canvas, treeSprite.x, treeSprite.y)
+      ctx.setTransform(dprScale, 0, 0, dprScale, 0, 0)
     }
 
     // ---- bird --------------------------------------------------------------
@@ -884,15 +929,11 @@ export default function LeafFall({
       ctx.closePath()
     }
 
-    const drawLeafDetails = (leaf: Leaf, ink: readonly [number, number, number]) => {
+    const drawLeafDetails = (leaf: Leaf) => {
       const s = leaf.size
       const squash = Math.abs(Math.cos(leaf.flip))
-      const detail = `rgb(${Math.max(0, ink[0] - 30)},${Math.max(0, ink[1] - 35)},${Math.max(
-        0,
-        ink[2] - 28,
-      )})`
 
-      ctx.strokeStyle = detail
+      ctx.strokeStyle = DETAIL_STYLES[leaf.ink]
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
       ctx.lineWidth = Math.max(0.55, s * 0.025 * squash)
@@ -931,7 +972,6 @@ export default function LeafFall({
     }
 
     const drawLeaf = (leaf: Leaf) => {
-      const ink = INKS[leaf.ink]
       const screen = screens[leaf.ink]
       // Edge-on: nothing to print this frame, and a hairline would only alias.
       if (Math.abs(Math.cos(leaf.flip)) < 0.06) return
@@ -947,7 +987,7 @@ export default function LeafFall({
 
       tracePath(leaf, 0, 0)
       ctx.globalAlpha = leaf.alpha * 0.2
-      ctx.fillStyle = `rgb(${ink[0]},${ink[1]},${ink[2]})`
+      ctx.fillStyle = INK_STYLES[leaf.ink]
       ctx.fill()
 
       if (screen) {
@@ -956,7 +996,7 @@ export default function LeafFall({
         ctx.fill()
       }
 
-      drawLeafDetails(leaf, ink)
+      drawLeafDetails(leaf)
     }
 
     const render = (now: number) => {

@@ -104,15 +104,17 @@ export default function Gallery() {
   const [selected, setSelected] = useState<Photo | null>(null)
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
 
-  useEffect(() => {
-    const updateViewport = () => {
-      setViewport({ width: window.innerWidth, height: window.innerHeight })
-    }
+  // Only the open modal is sized from the viewport, so it is measured on open
+  // and tracked while open, rather than re-rendering the gallery on every
+  // resize while it is closed.
+  const updateViewport = () => {
+    setViewport({ width: window.innerWidth, height: window.innerHeight })
+  }
 
+  const openPhoto = (photo: Photo) => {
     updateViewport()
-    window.addEventListener('resize', updateViewport)
-    return () => window.removeEventListener('resize', updateViewport)
-  }, [])
+    setSelected(photo)
+  }
 
   useEffect(() => {
     if (!selected) return
@@ -122,10 +124,12 @@ export default function Gallery() {
     }
 
     document.body.style.overflow = 'hidden'
+    window.addEventListener('resize', updateViewport)
     document.addEventListener('keydown', onKeyDown)
 
     return () => {
       document.body.style.overflow = ''
+      window.removeEventListener('resize', updateViewport)
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [selected])
@@ -182,7 +186,7 @@ export default function Gallery() {
             photo={feature}
             variant="feature"
             className="aspect-[4/3] md:col-span-7 md:row-span-2 md:aspect-auto"
-            onOpen={setSelected}
+            onOpen={openPhoto}
           />
           {rest.map((photo) => (
             <Frame
@@ -190,7 +194,7 @@ export default function Gallery() {
               photo={photo}
               variant="stacked"
               className="aspect-[3/2] md:col-span-5"
-              onOpen={setSelected}
+              onOpen={openPhoto}
             />
           ))}
         </div>

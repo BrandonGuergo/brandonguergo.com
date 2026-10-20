@@ -135,6 +135,10 @@ export default function WateringGarden({
 
     let raf = 0
     let running = false
+    let inView = false
+    // True once a render has left the canvas empty, so idle frames can skip
+    // clearing and recompositing a viewport-sized layer that is already clear.
+    let blank = false
     let last = performance.now()
     let lastWater = 0
 
@@ -305,46 +309,54 @@ export default function WateringGarden({
       lastWater = now
     }
 
-    const drawDrop = (drop: Drop) => {
-      const speed = Math.hypot(drop.vx, drop.vy) || 1
-      const ux = drop.vx / speed
-      const uy = drop.vy / speed
-
-      const length = Math.min(4, 1.2 + speed * 0.012)
-
-      ctx.save()
+    // Every drop shares one style, so it is set once for the whole shower
+    // rather than saved and restored per drop.
+    const drawDrops = () => {
+      if (!drops.length) return
 
       ctx.globalAlpha = 0.52
       ctx.strokeStyle = WATER
-      ctx.lineWidth = drop.size
       ctx.lineCap = 'round'
 
-      ctx.beginPath()
-      ctx.moveTo(
-        drop.x - ux * length,
-        drop.y - uy * length,
-      )
-      ctx.lineTo(drop.x, drop.y)
-      ctx.stroke()
+      for (const drop of drops) {
+        const speed = Math.hypot(drop.vx, drop.vy) || 1
+        const ux = drop.vx / speed
+        const uy = drop.vy / speed
 
-      // A tiny highlight gives larger drops a little depth without making the
-      // water look glossy or visually heavy.
-      if (drop.size > 0.8) {
-        ctx.globalAlpha = 0.2
-        ctx.fillStyle = WATER_LIGHT
+        const length = Math.min(4, 1.2 + speed * 0.012)
+
+        ctx.lineWidth = drop.size
 
         ctx.beginPath()
+        ctx.moveTo(
+          drop.x - ux * length,
+          drop.y - uy * length,
+        )
+        ctx.lineTo(drop.x, drop.y)
+        ctx.stroke()
+      }
+
+      // A tiny highlight gives larger drops a little depth without making the
+      // water look glossy or visually heavy. One path, one fill.
+      ctx.globalAlpha = 0.2
+      ctx.fillStyle = WATER_LIGHT
+
+      ctx.beginPath()
+      for (const drop of drops) {
+        if (drop.size <= 0.8) continue
+        const r = drop.size * 0.42
+        ctx.moveTo(drop.x - 0.4 + r, drop.y - 0.4)
         ctx.arc(
           drop.x - 0.4,
           drop.y - 0.4,
-          drop.size * 0.42,
+          r,
           0,
           Math.PI * 2,
         )
-        ctx.fill()
       }
+      ctx.fill()
 
-      ctx.restore()
+      ctx.globalAlpha = 1
     }
 
     // -------------------------------------------------------------------------
@@ -835,12 +847,17 @@ export default function WateringGarden({
         drawFlower(flower, now)
       }
 
-      for (const drop of drops) {
-        drawDrop(drop)
-      }
+      drawDrops()
 
       drawCan()
+
+      blank = isIdle()
     }
+
+    const isIdle = () =>
+      !drops.length &&
+      !flowers.length &&
+      !(pointer.visible && interactive)
 
     const step = (now: number) => {
       raf = requestAnimationFrame(step)
@@ -902,6 +919,8 @@ export default function WateringGarden({
         )
       })
 
+      if (blank && isIdle()) return
+
       render(now)
     }
 
@@ -912,24 +931,37 @@ export default function WateringGarden({
     const resize = () => {
       const rect = canvas.getBoundingClientRect()
 
-      width = Math.round(rect.width)
-      height = Math.round(rect.height)
-      updateSectionBounds()
-
-      dpr = Math.min(
+      const nextWidth = Math.round(rect.width)
+      const nextHeight = Math.round(rect.height)
+      const nextDpr = Math.min(
         window.devicePixelRatio || 1,
         MAX_DPR,
       )
+      updateSectionBounds()
 
-      canvas.width = Math.max(
-        1,
-        Math.round(width * dpr),
-      )
+      // The section is observed too, and its reflows usually leave the fixed
+      // canvas the same size. Reassigning width/height reallocates the
+      // backing store even when the value is unchanged, so only do it on a
+      // real change.
+      if (
+        nextWidth !== width ||
+        nextHeight !== height ||
+        nextDpr !== dpr
+      ) {
+        width = nextWidth
+        height = nextHeight
+        dpr = nextDpr
 
-      canvas.height = Math.max(
-        1,
-        Math.round(height * dpr),
-      )
+        canvas.width = Math.max(
+          1,
+          Math.round(width * dpr),
+        )
+
+        canvas.height = Math.max(
+          1,
+          Math.round(height * dpr),
+        )
+      }
 
       if (pointer.visible || pointer.watering) {
         positionPointer()
@@ -946,17 +978,23 @@ export default function WateringGarden({
     const previousDocumentCursor = document.documentElement.style.cursor
 
     const syncCursor = () => {
-      document.documentElement.style.cursor =
+      const cursor =
         pointer.visible || pointer.watering
           ? 'none'
           : previousDocumentCursor
+
+      if (document.documentElement.style.cursor !== cursor) {
+        document.documentElement.style.cursor = cursor
+      }
     }
 
     const onPointerMove = (event: PointerEvent) => {
       updatePointer(event)
 
+      // While the section is off screen the pointer cannot be inside it, so
+      // skip the layout read on every move elsewhere on the page.
       if (!pointer.watering) {
-        pointer.visible = pointerIsInsideSection()
+        pointer.visible = inView && pointerIsInsideSection()
       }
 
       syncCursor()
@@ -1017,6 +1055,10 @@ export default function WateringGarden({
      * prevents the familiar one-frame "drag behind" during fast scrolling.
      */
     const onScroll = () => {
+      // Off screen nothing is drawn against the ground line; the observer
+      // re-measures it when the section comes back into view.
+      if (!inView && !pointer.visible && !pointer.watering) return
+
       updateSectionBounds()
 
       if (!pointer.visible && !pointer.watering) return
@@ -1052,10 +1094,13 @@ export default function WateringGarden({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        inView = entry.isIntersecting
+
         if (
           entry.isIntersecting &&
           !document.hidden
         ) {
+          updateSectionBounds()
           start()
         } else {
           stop()
