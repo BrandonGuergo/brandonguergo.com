@@ -107,6 +107,43 @@
     }
   }
 
+  /* Prints dissolve at the frame edges, so a slide never meets the arrows. */
+  .photo-fade {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 1.25rem,
+      #000 calc(100% - 1.25rem),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 1.25rem,
+      #000 calc(100% - 1.25rem),
+      transparent
+    );
+  }
+
+  @media (width >= 48rem) {
+    .photo-fade {
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 3.5rem,
+        #000 calc(100% - 3.5rem),
+        transparent
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 3.5rem,
+        #000 calc(100% - 3.5rem),
+        transparent
+      );
+    }
+  }
+
   .matrix-name {
     font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
     font-weight: 700;

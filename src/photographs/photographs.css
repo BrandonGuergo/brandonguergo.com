@@ -1,0 +1,11 @@
+/* Named groups travel. The root snapshot stays put, so the parchment
+   does not flash when a category or a photograph changes. */
+::view-transition-group(*) {
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.01ms;
+}

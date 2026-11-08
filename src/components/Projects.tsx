@@ -6,6 +6,7 @@ type Project = {
   description: string
   tags: readonly string[]
   link?: string
+  icon?: string
 }
 
 const PROJECTS: readonly Project[] = [
@@ -35,11 +36,12 @@ const PROJECTS: readonly Project[] = [
   },
   {
     num: '04',
-    title: 'Home Market',
+    title: 'Cottage',
     description:
-      'An iPhone app in Swift for a local goods marketplace, currently in development and focused on neighborhood discovery and simple product browsing.',
-    tags: ['In Development', 'Swift', 'iPhone App', 'Marketplace'],
-    link: '',
+      'A live board of what Treasure Coast home kitchens baked today. Neighbors ask, bakers say yes, and the payment stays between them. Cottage takes no cut.',
+    tags: ['Swift', 'iPhone', 'App Store'],
+    link: '/cottage/',
+    icon: '/cottage/app-icon.png',
   },
 ]
 
@@ -58,7 +60,16 @@ export default function Projects() {
               {/* Accent bar that fills on hover. */}
               <span className="absolute top-0 left-0 h-0 w-0.5 bg-linear-to-b from-emerald to-sage transition-all duration-300 group-hover:h-full" />
 
-              <div className="flex items-baseline gap-3">
+              <div className={`flex gap-3 ${project.icon ? 'items-center' : 'items-baseline'}`}>
+                {project.icon ? (
+                  <img
+                    src={project.icon}
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="size-14 shrink-0 rounded-[22%] ring-1 ring-soil/15"
+                  />
+                ) : null}
                 <span className="font-mono text-[0.65rem] tracking-[0.2em] text-emerald-pop">
                   {project.num}
                 </span>
@@ -85,13 +96,14 @@ export default function Projects() {
             </>
           )
 
+          const external = project.link?.startsWith('http') ?? false
+
           return (
             <li key={project.link || project.title} className="flex h-full">
               {project.link ? (
                 <a
                   href={project.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0"
                 >
                   {cardContent}

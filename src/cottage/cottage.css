@@ -1,0 +1,155 @@
+/* Cottage page only. This file is the stylesheet for cottage/index.html.
+   It is not imported by the home page, so these tokens never replace the
+   garden palette, Cormorant, or Jost. */
+@import '@fontsource-variable/fraunces/full.css';
+@import '@fontsource-variable/fraunces/full-italic.css';
+@import '@fontsource-variable/source-sans-3';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import 'tailwindcss';
+
+/* Same mapping Divinital uses: utilities read the theme variables, and
+   [data-theme="cottage"] supplies them. Inline so .bg-card here is
+   var(--card), not the home page's #f8f4ed. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-2: var(--accent-2);
+  --font-sans: var(--font-source-sans), 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), 'IBM Plex Mono', ui-monospace, monospace;
+  --font-serif: var(--font-fraunces), Fraunces, 'Iowan Old Style', Palatino, Georgia, serif;
+}
+
+html {
+  background-color: oklch(0.941 0.028 87);
+}
+
+/* Cottage — kitchen paper and crust, matched to the static policy pages
+ * (web/public/style.css): cream #f5ebd8, card #fffdf8, crust #7a4a1c, ink
+ * #2c1810. --accent is the crust for fills; --accent-2 is a deeper loaf-edge
+ * brown for small text. --jar and --fresh are the app icon's jam and the
+ * "n left" green from the Fresh board. Display type is Fraunces. */
+[data-theme='cottage'] {
+  --background: oklch(0.941 0.028 87);
+  --foreground: oklch(0.237 0.033 48);
+  --muted: oklch(0.91 0.032 85);
+  --muted-foreground: oklch(0.45 0.05 52);
+  --card: oklch(0.993 0.008 95);
+  --card-foreground: oklch(0.237 0.033 48);
+  --border: oklch(0.448 0.095 58 / 0.16);
+  --accent: oklch(0.448 0.095 58);
+  --accent-foreground: oklch(0.993 0.008 95);
+  --accent-2: oklch(0.38 0.09 50);
+  --jar: oklch(0.73 0.15 68);
+  --fresh: oklch(0.42 0.09 152);
+  --fresh-bg: oklch(0.94 0.03 150);
+  --font-fraunces: 'Fraunces Variable';
+  --font-source-sans: 'Source Sans 3 Variable';
+  --font-plex-mono: 'IBM Plex Mono';
+  --font-serif: var(--font-fraunces), Fraunces, 'Iowan Old Style', Palatino, Georgia, serif;
+  --font-sans: var(--font-source-sans), 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Menu bar: a crust-tinted cream band, a step warmer than the page. */
+  --header-bg: oklch(0.9 0.038 78);
+  --header-fg: oklch(0.237 0.033 48);
+  --header-muted: oklch(0.45 0.05 52);
+  --header-border: oklch(0.448 0.095 58 / 0.18);
+}
+
+[data-theme='cottage'] {
+  color-scheme: light;
+}
+
+/* Cottage marketing page: paper, the jar's gingham, and a soft display face. */
+.cottage-page {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      ellipse 50% 38% at 100% -8%,
+      color-mix(in oklch, var(--jar) 22%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 36% 28% at -8% 16%,
+      color-mix(in oklch, var(--accent) 10%, transparent),
+      transparent 52%
+    );
+}
+
+.cottage-display {
+  font-family: var(--font-serif);
+  font-weight: 560;
+  font-variation-settings:
+    'SOFT' 40,
+    'WONK' 1,
+    'opsz' 144,
+    'wght' 560;
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+}
+
+.cottage-check {
+  background-color: #e8d0ae;
+  background-image: repeating-conic-gradient(#7a4a1c 0% 25%, #e8d0ae 0% 50%);
+  background-size: 14px 14px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  .cottage-steam path {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: cottage-steam 3.8s ease-in-out infinite;
+  }
+
+  .cottage-steam path:nth-child(2) {
+    animation-delay: -1.3s;
+  }
+
+  .cottage-steam path:nth-child(3) {
+    animation-delay: -2.4s;
+  }
+
+  .cottage-reveal:not(.is-visible) {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  .cottage-reveal.is-visible {
+    animation: cottage-reveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes cottage-steam {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 0.95;
+  }
+}
+
+@keyframes cottage-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

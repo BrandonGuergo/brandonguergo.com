@@ -21,6 +21,24 @@ const SECTION_IDS = NAV_LINKS.filter((l) => !l.external).map((l) => l.href.slice
 const DRAWER_LINK_CLASS =
   'block py-4 font-medium text-muted uppercase tracking-widest text-lg hover:text-emerald hover:pl-2 transition-all'
 
+/** Land the photography section low enough that the outlined link is on screen. */
+function revealPhotography() {
+  const section = document.getElementById('photography')
+  const button = document.getElementById('all-photographs')
+  if (!section || !button) return
+  const headerH = document.querySelector('header')?.getBoundingClientRect().height ?? 0
+  const natural = section.getBoundingClientRect().top + window.scrollY - headerH - 8
+  const reveal = button.getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 36
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({
+    top: Math.max(0, natural, reveal),
+    behavior: reduce ? 'instant' : 'smooth',
+  })
+  if (window.location.hash !== '#photography') {
+    history.pushState(null, '', '#photography')
+  }
+}
+
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   // The header floats transparently over the dark hero and only takes on the
@@ -168,6 +186,11 @@ export default function Header() {
                   <a
                     href={link.href}
                     aria-current={isActive ? 'true' : undefined}
+                    onClick={(event) => {
+                      if (link.external || link.href !== '#photography') return
+                      event.preventDefault()
+                      revealPhotography()
+                    }}
                     className={`relative pb-1 text-xs font-medium tracking-widest uppercase transition-colors duration-500 ${
                       scrolled
                         ? isActive
@@ -236,7 +259,12 @@ export default function Header() {
             >
               <a
                 href={link.href}
-                onClick={closeMenu}
+                onClick={(event) => {
+                  closeMenu()
+                  if (link.external || link.href !== '#photography') return
+                  event.preventDefault()
+                  requestAnimationFrame(() => revealPhotography())
+                }}
                 className={DRAWER_LINK_CLASS}
                 {...(link.external
                   ? { target: '_blank', rel: 'noopener noreferrer' }
