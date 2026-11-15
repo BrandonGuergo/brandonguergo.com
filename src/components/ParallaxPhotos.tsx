@@ -375,15 +375,7 @@ export default function ParallaxPhotos() {
         ))}
       </div>
 
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 pt-2 pb-20 md:px-8 md:pb-24">
-        <a
-          id="all-photographs"
-          href="/photographs/"
-          className="inline-flex items-center gap-2.5 rounded-sm border border-emerald px-5 py-2.5 text-sm text-emerald transition-colors hover:bg-emerald hover:text-parchment"
-        >
-          All photographs
-          <span aria-hidden="true">→</span>
-        </a>
+      <div className="mx-auto flex max-w-7xl justify-end px-6 pt-2 pb-20 md:px-8 md:pb-24">
         <p data-photo-count className="text-[0.65rem] tracking-[0.28em] text-soil uppercase">
           {active + 1} / {PHOTOS.length}
         </p>
