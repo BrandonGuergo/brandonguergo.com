@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page not found</title>
+  <script>
+    // GitHub Pages has no rewrite. A Cottage storefront link is
+    // /cottage/baker/<id>. Send a phone without the app to the page that
+    // can read the id. A phone with Cottage is claimed before this loads.
+    (function () {
+      var match = location.pathname.match(/^\/cottage\/baker\/([0-9a-f-]{36})\/?$/i);
+      if (match) location.replace("/cottage/baker/?id=" + match[1]);
+    })();
+  </script>
+</head>
+<body>
+  <p>That page isn't here.</p>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TC3G3X7544.com.brandonguergo.cottage"],
+        "components": [
+          {
+            "/": "/cottage/baker/*",
+            "comment": "A storefront link opens the app instead of the web page."
+          },
+          {
+            "/": "/cottage/baker/",
+            "?": { "id": "*" },
+            "comment": "The same link, once a phone without the app is sent to the query form."
+          }
+        ]
+      }
+    ]
+  }
+}

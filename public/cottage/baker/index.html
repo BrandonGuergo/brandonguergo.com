@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F5EBD8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <!-- The page reads the board the way a signed-out phone does: the
+       publishable key, under the database's own read policies. Nothing else. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://kuyaqbgcewnkcnnlyufx.supabase.co; img-src https://kuyaqbgcewnkcnnlyufx.supabase.co; base-uri 'none'; form-action 'none'">
+  <meta name="robots" content="noindex">
+  <meta property="og:title" content="A Florida home kitchen on Cottage">
+  <meta property="og:description" content="See what's on the shelf, then get Cottage to order.">
+  <title>Cottage</title>
+  <link rel="stylesheet" href="/cottage/style.css">
+  <script src="/cottage/baker/storefront.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-wrap">
+      <p class="site-name">Cottage</p>
+      <nav class="site-nav" aria-label="Cottage policies">
+        <a href="/cottage/support">Support</a>
+        <a href="/cottage/privacy">Privacy</a>
+        <a href="/cottage/terms">Terms</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <article class="site-wrap storefront" aria-busy="true">
+      <img class="storefront-photo" id="maker-photo" alt="" hidden>
+      <div class="maker-name-row">
+        <h1 id="maker-name">A Florida home kitchen</h1>
+        <p class="market-tag" id="maker-market-tag" hidden>Farmer's Market</p>
+      </div>
+      <p class="storefront-town" id="maker-town" hidden></p>
+      <p class="storefront-bio" id="maker-bio" hidden></p>
+      <section class="market-box" id="maker-market" hidden>
+        <p class="market-tag">Farmer's Market</p>
+        <p class="market-hours" id="maker-market-hours"></p>
+        <p class="market-place" id="maker-market-place"></p>
+      </section>
+
+      <section class="get-app" aria-labelledby="get-app-heading">
+        <h2 id="get-app-heading">To order, get Cottage</h2>
+        <p>Ask for something, follow this kitchen, and get pickup details in the free iPhone app.</p>
+        <!-- Storefront.appStoreURL; build-web.sh refuses the page if they differ. -->
+        <a class="button" id="get-cottage" href="https://apps.apple.com/us/app/cottage-homemade-foods/id6814027461">Get Cottage</a>
+      </section>
+
+      <section aria-labelledby="shelf-heading">
+        <h2 id="shelf-heading">On the shelf</h2>
+        <p class="shelf-status" id="shelf-status" role="status">Looking at the shelf…</p>
+        <ul class="shelf" id="shelf" hidden></ul>
+      </section>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="site-wrap">
+      <nav class="site-nav" aria-label="Cottage policies">
+        <a href="/cottage/support">Support</a>
+        <a href="/cottage/privacy">Privacy</a>
+        <a href="/cottage/terms">Terms</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
