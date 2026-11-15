@@ -9,7 +9,7 @@ export default defineConfig({
     // French, Cottage, and Photographs are their own pages. French stays
     // unlinked from the home page. Cottage is linked from the work section.
     // Photographs is linked from the nav and the ridgeline plate.
-    // Agora support is its own page at /agora-support/ and is not linked from home.
+    // Agora support, privacy, and terms are their own pages and are not linked from home.
     rollupOptions: {
       input: {
         main: 'index.html',
@@ -17,6 +17,8 @@ export default defineConfig({
         cottage: 'cottage/index.html',
         photographs: 'photographs/index.html',
         agoraSupport: 'agora-support/index.html',
+        agoraPrivacy: 'agora-privacy/index.html',
+        agoraTerms: 'agora-terms/index.html',
       },
     },
   },

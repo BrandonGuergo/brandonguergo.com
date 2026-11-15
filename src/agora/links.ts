@@ -5,9 +5,9 @@
  */
 export const agoraLinks = {
   appStoreUrl: '',
-  supportEmail: '',
-  privacyPolicyUrl: '',
-  termsUrl: '',
+  supportEmail: 'divinital@protonmail.com',
+  privacyPolicyUrl: 'https://brandonguergo.com/agora-privacy/',
+  termsUrl: 'https://brandonguergo.com/agora-terms/',
 }
 
 /** An http(s) URL, or null when the slot is still empty or not a web address. */

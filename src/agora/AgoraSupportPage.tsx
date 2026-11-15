@@ -66,14 +66,15 @@ const STEPS = [
   },
 ] as const
 
-function Mark() {
+function Mark({ small = false }: { small?: boolean }) {
   return (
-    <span className="mark" aria-hidden="true">
-      <svg viewBox="0 0 16 16" fill="none">
-        <path d="M3 13 L8 3 L13 13" stroke="#f4f1ea" strokeWidth="1.4" strokeLinejoin="round" />
-        <path d="M5.4 9.2 H10.6" stroke="#8eb4ff" strokeWidth="1.4" strokeLinecap="round" />
-      </svg>
-    </span>
+    <img
+      className={small ? 'mark-logo mark-logo-sm' : 'mark-logo'}
+      src="/agora/app-icon.png"
+      alt=""
+      width={small ? 24 : 28}
+      height={small ? 24 : 28}
+    />
   )
 }
 
@@ -349,7 +350,10 @@ export default function AgoraSupportPage() {
 
       <footer className="site-footer">
         <div className="shell footer-grid">
-          <p className="footer-name">Agora</p>
+          <p className="footer-name">
+            <Mark small />
+            Agora
+          </p>
           <nav className="footer-nav" aria-label="Agora">
             <a href="/agora-support/">Home</a>
             <a href="#contact">Support</a>

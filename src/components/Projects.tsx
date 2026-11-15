@@ -43,6 +43,15 @@ const PROJECTS: readonly Project[] = [
     link: '/cottage/',
     icon: '/cottage/app-icon.png',
   },
+  {
+    num: '05',
+    title: 'Agora',
+    description:
+      'An intelligent marketplace. Describe what you want in plain language, publish what you have, and a background watcher reads new listings against open requests.',
+    tags: ['Swift', 'iPhone', 'Marketplace'],
+    link: '/agora-support/',
+    icon: '/agora/app-icon.png',
+  },
 ]
 
 export default function Projects() {
