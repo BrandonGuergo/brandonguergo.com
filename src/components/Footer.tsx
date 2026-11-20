@@ -1,6 +1,6 @@
 const LINKS = [
-  { href: '#programming', label: 'Projects' },
-  { href: '#photography', label: 'Photography' },
+  { href: '#programming', label: 'Software Projects' },
+  { href: '/photographs/', label: 'Photography' },
   { href: '#about', label: 'About' },
 ] as const
 
@@ -16,8 +16,7 @@ export default function Footer() {
             </p>
 
             <p className="mt-3 text-sm leading-relaxed text-cream/60">
-              Developer &amp; photographer in Florida. Building languages and
-              data structures from scratch, shooting landscape and wildlife.
+              Developer in Florida. Building languages and data structures from scratch.
             </p>
           </div>
 

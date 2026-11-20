@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
+import Header from '../components/Header'
 import {
   CATEGORIES,
   PHOTOS,
@@ -152,18 +153,9 @@ export default function PhotographsPage() {
 
   return (
     <div className="min-h-screen bg-parchment text-ink">
-      <header className="border-b border-soil/15">
-        <div className="mx-auto flex max-w-6xl items-baseline justify-between gap-6 px-6 py-6 md:px-8">
-          <a href="/" className="font-serif text-2xl text-bark transition-colors hover:text-emerald">
-            Brandon Guergo
-          </a>
-          <a href="/#photography" className="text-sm text-soil transition-colors hover:text-emerald">
-            Back
-          </a>
-        </div>
-      </header>
+      <Header overHero={false} />
 
-      <main className="mx-auto max-w-6xl px-6 pt-12 pb-24 md:px-8 md:pt-16">
+      <main className="mx-auto max-w-6xl px-6 pt-28 pb-24 md:px-8 md:pt-32">
         <p className="text-[0.65rem] tracking-[0.3em] text-emerald-pop uppercase">
           Landscape &amp; Wildlife
         </p>

@@ -4,14 +4,11 @@ import PlantScene from './PlantScene'
 const META = [
   { label: 'Based in', value: 'Florida, USA' },
   { label: 'Building', value: 'AI integrated web-apps' },
-  { label: 'Photographing', value: 'Landscape & wildlife' },
 ] as const
 
 const INDEX = [
-  
-  { href: '#programming', num: '01', label: 'Projects' },
-  { href: '#photography', num: '02', label: 'Photography' },
-  { href: '#about', num: '03', label: 'About' },
+  { href: '#programming', num: '01', label: 'Software Projects' },
+  { href: '#about', num: '02', label: 'About' },
 ] as const
 
 export default function Hero() {
@@ -51,7 +48,7 @@ export default function Hero() {
             <div data-quiet className="w-fit max-w-full">
               <p className="mb-6 flex items-center gap-3 text-[0.7rem] tracking-[0.32em] text-sage-light uppercase">
                 <span className="block h-px w-8 bg-sage" />
-                Developer &amp; Photographer
+                Developer
               </p>
 
               <h1 className="font-serif text-[clamp(3.5rem,11vw,7.5rem)] leading-[0.86] font-medium tracking-tight text-parchment">
@@ -61,8 +58,7 @@ export default function Hero() {
               </h1>
 
               <p className="mt-7 max-w-md text-lg leading-8 tracking-wide text-cream/75">
-                I build programming languages and data structures from scratch, and keep
-                a camera within reach for everything else.
+                I build programming languages and data structures from scratch.
               </p>
 
               <div className="mt-9 flex flex-wrap gap-3">
@@ -71,12 +67,6 @@ export default function Hero() {
                   className="rounded-sm border border-emerald-mid bg-emerald-mid px-6 py-3 text-xs font-semibold tracking-[0.2em] text-parchment uppercase transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-pop hover:shadow-2xl motion-reduce:hover:translate-y-0"
                 >
                   View Projects
-                </a>
-                <a
-                  href="#photography"
-                  className="rounded-sm border border-cream/25 bg-cream/5 px-6 py-3 text-xs font-semibold tracking-[0.2em] text-cream uppercase transition-all duration-300 hover:-translate-y-0.5 hover:border-sage-light hover:bg-cream/10 hover:text-sage-light motion-reduce:hover:translate-y-0"
-                >
-                  See Photos
                 </a>
               </div>
             </div>
@@ -116,7 +106,7 @@ export default function Hero() {
         className="animate-fadeInUp relative border-t border-cream/10 opacity-0"
         style={{ animationDelay: '0.3s' }}
       >
-        <dl className="mx-auto grid w-full max-w-7xl grid-cols-1 divide-y divide-cream/12 px-6 sm:grid-cols-3 sm:divide-x sm:divide-y-0 md:px-8">
+        <dl className="mx-auto grid w-full max-w-7xl grid-cols-1 divide-y divide-cream/12 px-6 sm:grid-cols-2 sm:divide-x sm:divide-y-0 md:px-8">
           {META.map((item) => (
             <div key={item.label} className="py-3 sm:px-6 sm:py-4 sm:first:pl-0 sm:last:pr-0">
               <dt className="text-[0.6rem] tracking-[0.28em] text-cream/35 uppercase">
