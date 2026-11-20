@@ -66,10 +66,22 @@ export default function Projects() {
         {PROJECTS.map((project) => {
           const cardContent = (
             <>
+              <span className="card-scan pointer-events-none absolute inset-0" />
+              <span className="pointer-events-none absolute top-2.5 left-2.5 h-2.5 w-2.5 border-t border-l border-emerald/0 transition-colors duration-300 group-hover:border-emerald/70" />
+              <span className="pointer-events-none absolute top-2.5 right-2.5 h-2.5 w-2.5 border-t border-r border-emerald/0 transition-colors duration-300 group-hover:border-emerald/70" />
+              <span className="pointer-events-none absolute bottom-2.5 left-2.5 h-2.5 w-2.5 border-b border-l border-emerald/0 transition-colors duration-300 group-hover:border-emerald/70" />
+              <span className="pointer-events-none absolute right-2.5 bottom-2.5 h-2.5 w-2.5 border-r border-b border-emerald/0 transition-colors duration-300 group-hover:border-emerald/70" />
               {/* Accent bar that fills on hover. */}
               <span className="absolute top-0 left-0 h-0 w-0.5 bg-linear-to-b from-emerald to-sage transition-all duration-300 group-hover:h-full" />
 
-              <div className={`flex gap-3 ${project.icon ? 'items-center' : 'items-baseline'}`}>
+              <div className="flex items-center justify-between font-mono text-[0.62rem] tracking-[0.22em] text-emerald-pop uppercase">
+                <span>PRJ / {project.num}</span>
+                <span className="text-soil/35 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-emerald motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0">
+                  {project.link ? '↗' : '•'}
+                </span>
+              </div>
+
+              <div className={`mt-4 flex gap-3 ${project.icon ? 'items-center' : 'items-baseline'}`}>
                 {project.icon ? (
                   <img
                     src={project.icon}
@@ -79,15 +91,9 @@ export default function Projects() {
                     className="size-14 shrink-0 rounded-[22%] ring-1 ring-soil/15"
                   />
                 ) : null}
-                <span className="font-mono text-[0.65rem] tracking-[0.2em] text-emerald-pop">
-                  {project.num}
-                </span>
                 <h3 className="font-serif text-2xl font-semibold text-bark">
                   {project.title}
                 </h3>
-                <span className="ml-auto text-soil/35 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-emerald motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0">
-                  {project.link ? '↗' : '•'}
-                </span>
               </div>
 
               <p className="mt-3 grow text-sm leading-7 text-soil">{project.description}</p>
@@ -113,12 +119,12 @@ export default function Projects() {
                 <a
                   href={project.link}
                   {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0"
+                  className="group relative flex h-full w-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0"
                 >
                   {cardContent}
                 </a>
               ) : (
-                <div className="group relative flex h-[300px] w-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0">
+                <div className="group relative flex h-full w-full flex-col overflow-hidden rounded-lg border border-soil/12 bg-card p-7 shadow-xs transition-all duration-300 hover:border-emerald/30 hover:shadow-xl motion-reduce:hover:translate-y-0">
                   {cardContent}
                 </div>
               )}

@@ -11,6 +11,11 @@ const INDEX = [
   { href: '#about', num: '02', label: 'About' },
 ] as const
 
+const SIGNALS = [
+  { label: 'Focus', value: 'Languages & structures' },
+  { label: 'Surface', value: 'Web · iOS' },
+] as const
+
 export default function Hero() {
   return (
     <section
@@ -72,19 +77,35 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Section index — doubles as secondary navigation and as ballast on
-              the right, so the hero is not one column floating in dead space. */}
+          {/* Instrument panel. Same job as the old index — navigation and
+              ballast — drawn as a readout so the software side of the page
+              has a voice of its own beside the field. */}
           <nav
             aria-label="Page sections"
-            className="animate-fadeInUp opacity-0 lg:col-span-4"
+            data-quiet
+            className="animate-fadeInUp relative border border-cream/15 bg-[#07140d]/72 p-5 opacity-0 shadow-[0_0_40px_rgba(61,138,99,0.08)] lg:col-span-4"
             style={{ animationDelay: '0.16s' }}
           >
-            <ul data-quiet className="divide-y divide-cream/12">
+            <span className="pointer-events-none absolute top-0 left-0 h-3 w-3 border-t border-l border-sage-light/70" />
+            <span className="pointer-events-none absolute top-0 right-0 h-3 w-3 border-t border-r border-sage-light/70" />
+            <span className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b border-l border-sage-light/70" />
+            <span className="pointer-events-none absolute right-0 bottom-0 h-3 w-3 border-r border-b border-sage-light/70" />
+
+            <div className="flex items-center justify-between font-mono text-[0.62rem] tracking-[0.28em] text-sage-light uppercase">
+              <span>System</span>
+              <span className="flex items-center gap-2 text-cream/70">
+                <span className="size-1.5 rounded-full bg-emerald-pop shadow-[0_0_8px_rgba(61,138,99,0.9)]" />
+                Ready
+                <span className="hud-caret text-emerald-pop">▍</span>
+              </span>
+            </div>
+
+            <ul className="mt-4 divide-y divide-cream/12 border-y border-cream/12">
               {INDEX.map((item) => (
                 <li key={item.href}>
                   <a
                     href={item.href}
-                    className="group flex items-baseline gap-4 py-3 text-sm tracking-[0.18em] text-cream/70 uppercase transition-colors hover:text-parchment lg:py-3.5"
+                    className="group flex items-baseline gap-4 py-3 text-sm tracking-[0.18em] text-cream/70 uppercase transition-colors hover:text-parchment"
                   >
                     <span className="font-mono text-[0.65rem] text-emerald-pop/80">{item.num}</span>
                     {item.label}
@@ -95,6 +116,15 @@ export default function Hero() {
                 </li>
               ))}
             </ul>
+
+            <dl className="mt-4 space-y-2 font-mono text-[0.65rem] tracking-[0.14em] text-cream/45 uppercase">
+              {SIGNALS.map((signal) => (
+                <div key={signal.label} className="flex items-baseline justify-between gap-4">
+                  <dt>{signal.label}</dt>
+                  <dd className="text-right text-cream/80">{signal.value}</dd>
+                </div>
+              ))}
+            </dl>
           </nav>
         </div>
       </div>
